@@ -26,18 +26,18 @@
 
 - [Project Description](#-project-description)
 - [Client Requirements](#-client-requirements)
-- [Network Design](#-network-design)
+- [Physical Topology](#-physical-topology)
+- [Logical Topology](#-logical-topology)
 - [IP Addressing Plan](#-ip-addressing-plan)
 - [VLAN Design](#-vlan-design)
-- [Wireless Security Implementation](#-wireless-security-implementation)
 - [Guest Network Isolation (CR3)](#-guest-network-isolation-cr3)
+- [Wireless Security Implementation](#-wireless-security-implementation)
 - [DHCP Configuration](#-dhcp-configuration)
-- [Device Configuration Summary](#-device-configuration-summary)
-- [Testing and Verification](#-testing-and-verification)
 - [Key Design Decisions](#-key-design-decisions)
 - [Project Structure](#-project-structure)
 - [Commit History](#-commit-history)
-- [Future Work](#-future-work-milestone-2)
+- [Future Work (Milestone 2)](#-future-work-milestone-2)
+- [References](#-references)
 - [Academic Integrity Statement](#-academic-integrity-statement)
 
 ---
@@ -61,64 +61,65 @@ This repository contains the complete network design for **Barolong Farms Co-ope
 
 Based on the project brief for **Barolong Farms Co-operative (Taung)** in the agricultural industry, the following requirements have been identified:
 
-| **Requirement** | **Description** | **Source** |
-|-----------------|-----------------|------------|
-| **Core Connectivity** | Provide appropriate connectivity and network services for the agricultural organization | Section 6 |
-| **IP Addressing** | Use assigned addressing block 10.19.0.0/16 | Section 6 & 7 |
-| **Wireless Security** | Implement and demonstrate WPA2-PSK hardening | Section 9 |
-| **Scalability** | Accommodate seasonal staff doubling user numbers for three months annually | Section 8 |
-| **Guest Wi-Fi (CR3)** | Add Guest Wi-Fi for visitors, isolated from internal resources | Section 10 |
-| **Packet Tracer** | Use Cisco Packet Tracer for implementation and simulation | Section 7 |
-| **Testing** | Demonstrate successful connectivity and testing | Section 11 |
-| **Documentation** | Maintain GitHub portfolio with professional README and evidence | Section 12 |
-| **Video Demonstration** | Submit 15-20 minute video with webcam view | Section 13 |
+| **Requirement** | **Description** | **Source Reference** |
+|-----------------|-----------------|---------------------|
+| **Core Connectivity** | Provide appropriate connectivity and network services for the agricultural organization. The completed network must permit successful data exchange between appropriate nodes. | Section 6: Client Requirements |
+| **IP Addressing** | Use the assigned addressing block **10.19.0.0/16** as the basis for all IP address allocations throughout the network. | Section 6 & 7 |
+| **Wireless Security Challenge** | Implement and demonstrate **Wireless Security (WPA2-PSK hardening)** . Enterprise option is an optional extension. Must configure, verify, and demonstrate this within the assigned client network. | Section 9: Assigned Networking Challenge |
+| **Design Constraint - Scalability** | The network must accommodate **seasonal staff doubling user numbers** for three months each year. The design must be scalable to handle this increased load. | Section 8: Design Constraint |
+| **Change Request CR3 - Guest Wi-Fi** | **Guest Wi-Fi must be added for visitors**, isolated from internal resources. The final solution must show how the network accommodates this change request. | Section 10: Client Change Request |
+| **Packet Tracer Implementation** | Use Cisco Packet Tracer for network implementation and simulation. Design appropriate topology and device arrangement. Configure necessary routers, switches, end devices, and other required nodes. | Section 7: Network Design Requirements |
+| **Testing and Verification** | Test relevant end-to-end connectivity. Verify the assigned networking challenge. Capture clear evidence of successful operation/configuration. Document important troubleshooting performed. | Section 11: Testing Requirements |
+| **GitHub Portfolio** | Create and maintain an individual GitHub portfolio. Include professional README and appropriate project evidence. Use meaningful commits showing development over time. | Section 12: GitHub Portfolio of Evidence |
+| **Video Demonstration** | Submit 15-20 minute individual video with inset webcam view. Introduce yourself, explain client requirements and network design, demonstrate Packet Tracer implementation and assigned networking challenge. | Section 13: Individual Video Demonstration |
 
 ---
 
-## 🌐 Network Design
+## 🌐 Physical Topology
 
-### Physical Topology
+### Design Overview
 
-The network follows a **hierarchical three-tier design** (Core-Distribution-Access) to provide scalability, redundancy, and organized network management. This approach is particularly suitable for accommodating the seasonal staff increase.
+The physical topology follows a **hierarchical three-tier design** (Core-Distribution-Access) to provide scalability, redundancy, and organized network management. This approach is particularly suitable for accommodating the seasonal staff increase, as additional access switches and access points can be added without disrupting the core infrastructure.
 
-#### Physical Topology Diagram
+### Hardware Components
+
+| **Device Type** | **Model** | **Quantity** | **Purpose** |
+|-----------------|-----------|--------------|-------------|
+| Core Router | Cisco 4321 | 1 | Gateway for all internal networks, inter-VLAN routing, DHCP services, NAT, and ACL enforcement for guest isolation |
+| Core Switch | Cisco 3650 (Layer 3) | 1 | Backbone of the network, provides high-speed switching between distribution layers |
+| Wireless LAN Controller (WLC) | Cisco 2500 Series | 1 | Centralized management of all lightweight access points, simplifies configuration and security policy deployment |
+| Distribution Switch | Cisco 2960 (Layer 2) | 1 | Aggregates connections from access switches in different buildings/departments |
+| Access Switches | Cisco 2960 (Layer 2) | N (as needed) | Connects end devices (administrative PCs, printers, etc.) in various locations across the farm |
+| Lightweight Access Points (LAPs) | Cisco AIR-AP1850 | N (as needed) | Provides wireless coverage for staff and seasonal workers across office and farm buildings |
+| Guest Access Point / Wireless Router | Cisco WRT300N | 1 | Dedicated or VLAN-separated device providing Guest Wi-Fi connectivity, isolated from internal resources |
+| End Devices | Various | N (as needed) | Administrative PCs, staff laptops, smartphones, printers, and visitor devices |
+
+### Physical Topology Diagram
 
 ![Physical Topology](Physical%20topolgy.png)
 
 *Figure 1: Physical Topology Diagram of Barolong Farms Network*
 
-#### Hardware Components
-
-| **Device Type** | **Model** | **Quantity** | **Purpose** |
-|-----------------|-----------|--------------|-------------|
-| Core Router | Cisco 4321 | 1 | Gateway, inter-VLAN routing, DHCP, NAT, ACL |
-| Core Switch | Cisco 3650 (Layer 3) | 1 | Backbone of the network |
-| Wireless LAN Controller | Cisco 2500 Series | 1 | Centralized AP management |
-| Distribution Switch | Cisco 2960 (Layer 2) | 1 | Aggregates access switches |
-| Access Switches | Cisco 2960 (Layer 2) | N (as needed) | Connects end devices |
-| Lightweight Access Points | Cisco AIR-AP1850 | N (as needed) | Wireless coverage |
-| Guest Access Point | Cisco WRT300N | 1 | Guest Wi-Fi connectivity |
-
-#### Physical Layout Description
+### Physical Layout Description
 
 The network is physically distributed across the farm premises as follows:
 
-1. **Main Building (Administration):**
-   - Core Router (R1) and Core Switch (S1) are located in a secured server room
-   - Wireless LAN Controller (WLC) is co-located with core equipment
-   - Access Switch S3 provides wired connectivity for administrative PCs
-   - LAP (Office) provides wireless coverage for administrative staff
+**1. Main Building (Administration):**
+- Core Router (R1) and Core Switch (S1) are located in a secured server room
+- Wireless LAN Controller (WLC) is co-located with core equipment
+- Access Switch S3 provides wired connectivity for administrative PCs
+- LAP (Office) provides wireless coverage for administrative staff
 
-2. **Farm Operations Area:**
-   - Distribution Switch (S2) is located in a central equipment room
-   - Access Switch S4 provides connectivity for operational PCs and printers
-   - LAP (Farm Buildings) provides wireless coverage for seasonal workers
+**2. Farm Operations Area:**
+- Distribution Switch (S2) is located in a central equipment room
+- Access Switch S4 provides connectivity for operational PCs and printers
+- LAP (Farm Buildings) provides wireless coverage for seasonal workers
 
-3. **Visitor Areas:**
-   - Guest Access Point is strategically placed in reception/visitor areas
-   - Physical separation is achieved through VLAN isolation on the core router
+**3. Visitor Areas:**
+- Guest Access Point is strategically placed in reception/visitor areas
+- Physical separation is achieved through VLAN isolation on the core router
 
-#### Physical Connectivity Summary
+### Physical Connectivity Summary
 
 | **Connection** | **Media Type** | **Description** |
 |----------------|----------------|-----------------|
@@ -130,6 +131,32 @@ The network is physically distributed across the farm premises as follows:
 | WLC to Access Points | Wireless / Copper | CAPWAP protocol for AP management |
 | Guest AP to Core Switch | Copper (Fast Ethernet) | Dedicated Guest VLAN connection |
 
-### Logical Topology
+---
+
+## 🔄 Logical Topology
+
+### Design Overview
 
 The logical topology uses **VLAN segmentation** to isolate traffic, improve security, and simplify network management. **Inter-VLAN routing** is performed using a **Router-on-a-Stick** model on the Core Router (R1). **Access Control Lists (ACLs)** are implemented to enforce security policies, particularly for Guest isolation.
+
+### VLAN Design
+
+| **VLAN ID** | **VLAN Name** | **Subnet** | **Description** |
+|-------------|---------------|------------|-----------------|
+| 10 | Management | 10.19.10.0/24 | Network device management (R1, S1, WLC). Restricted access for authorized administrators only. |
+| 20 | Admin Staff | 10.19.20.0/24 | Permanent farm administration staff. Full access to internal servers and resources. |
+| 30 | Operations Staff | 10.19.30.0/24 | Seasonal and operational staff in fields/warehouses. Restricted access to specific internal systems. |
+| 40 | Internal Wireless | 10.19.40.0/24 | Staff laptops and mobile devices connecting via corporate Wi-Fi. Secured with WPA2-PSK. |
+| 99 | Guest Wi-Fi | 10.19.99.0/24 | Visitor internet access. Completely isolated from all internal VLANs via ACL. |
+
+### Subnetting Rationale
+
+The assigned addressing block **10.19.0.0/16** has been subnetted into **/24** networks for the following reasons:
+
+- **Manageability:** /24 subnets provide up to 254 usable hosts, which is sufficient for each VLAN
+- **Scalability:** The /24 size allows for easy expansion without complex subnetting changes
+- **Broadcast Domain Control:** Smaller subnets limit the size of broadcast domains, improving performance
+- **Troubleshooting:** Clear separation of subnets makes problem identification easier
+- **Security:** Each VLAN/subnet can have distinct security policies applied
+
+### Logical Topology Diagram
