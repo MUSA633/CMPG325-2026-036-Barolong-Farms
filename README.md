@@ -81,6 +81,12 @@ Based on the project brief for **Barolong Farms Co-operative (Taung)** in the ag
 
 The network follows a **hierarchical three-tier design** (Core-Distribution-Access) to provide scalability, redundancy, and organized network management. This approach is particularly suitable for accommodating the seasonal staff increase.
 
+#### Physical Topology Diagram
+
+![Physical Topology](Physical%20topolgy.png)
+
+*Figure 1: Physical Topology Diagram of Barolong Farms Network*
+
 #### Hardware Components
 
 | **Device Type** | **Model** | **Quantity** | **Purpose** |
@@ -93,4 +99,37 @@ The network follows a **hierarchical three-tier design** (Core-Distribution-Acce
 | Lightweight Access Points | Cisco AIR-AP1850 | N (as needed) | Wireless coverage |
 | Guest Access Point | Cisco WRT300N | 1 | Guest Wi-Fi connectivity |
 
-#### Physical Topology Diagram
+#### Physical Layout Description
+
+The network is physically distributed across the farm premises as follows:
+
+1. **Main Building (Administration):**
+   - Core Router (R1) and Core Switch (S1) are located in a secured server room
+   - Wireless LAN Controller (WLC) is co-located with core equipment
+   - Access Switch S3 provides wired connectivity for administrative PCs
+   - LAP (Office) provides wireless coverage for administrative staff
+
+2. **Farm Operations Area:**
+   - Distribution Switch (S2) is located in a central equipment room
+   - Access Switch S4 provides connectivity for operational PCs and printers
+   - LAP (Farm Buildings) provides wireless coverage for seasonal workers
+
+3. **Visitor Areas:**
+   - Guest Access Point is strategically placed in reception/visitor areas
+   - Physical separation is achieved through VLAN isolation on the core router
+
+#### Physical Connectivity Summary
+
+| **Connection** | **Media Type** | **Description** |
+|----------------|----------------|-----------------|
+| Router to Core Switch | Copper (Gigabit Ethernet) | Trunk link carrying all VLANs |
+| Core Switch to Distribution Switch | Copper (Gigabit Ethernet) | Trunk link for aggregated traffic |
+| Core Switch to WLC | Copper (Fast Ethernet) | Management and control traffic |
+| Distribution to Access Switches | Copper (Fast Ethernet) | Access layer connectivity |
+| Access Switches to End Devices | Copper (Fast Ethernet) | End-user connectivity |
+| WLC to Access Points | Wireless / Copper | CAPWAP protocol for AP management |
+| Guest AP to Core Switch | Copper (Fast Ethernet) | Dedicated Guest VLAN connection |
+
+### Logical Topology
+
+The logical topology uses **VLAN segmentation** to isolate traffic, improve security, and simplify network management. **Inter-VLAN routing** is performed using a **Router-on-a-Stick** model on the Core Router (R1). **Access Control Lists (ACLs)** are implemented to enforce security policies, particularly for Guest isolation.
