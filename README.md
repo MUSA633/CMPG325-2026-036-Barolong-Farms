@@ -160,3 +160,25 @@ The assigned addressing block **10.19.0.0/16** has been subnetted into **/24** n
 - **Security:** Each VLAN/subnet can have distinct security policies applied
 
 ### Logical Topology Diagram
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ CORE ROUTER (R1) │
+│ (Router-on-a-Stick) │
+│ │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐ │
+│ │ VLAN 10 │ │ VLAN 20 │ │ VLAN 30 │ │ VLAN 40 │ │ VLAN 99 │ │
+│ │Management│ │ Admin │ │Operations│ │Internal │ │ Guest │ │
+│ │10.19.10.0│ │10.19.20.0│ │10.19.30.0│ │Wireless │ │ 10.19.99.0 │ │
+│ │ /24 │ │ /24 │ │ /24 │ │10.19.40.0│ │ /24 │ │
+│ │Gateway │ │Gateway │ │Gateway │ │ /24 │ │ Gateway │ │
+│ │10.19.10.1│ │10.19.20.1│ │10.19.30.1│ │Gateway │ │ 10.19.99.1 │ │
+│ └──────────┘ └──────────┘ └──────────┘ │10.19.40.1│ └──────┬─────────┘ │
+│ └──────────┘ │ │
+└───────────────────────────────────────────────────────────────┼───────────┘
+│
+┌───────▼───────────┐
+│ ACL 110 Applied │
+│ (Inbound) │
+│ Block Guest │
+│ to Internal │
+└───────────────────┘
