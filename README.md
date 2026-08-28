@@ -96,7 +96,7 @@ The physical topology follows a **hierarchical three-tier design** (Core-Distrib
 
 ### Physical Topology Diagram
 
-![Physical Topology](Physical%20topolgy.png)
+<img width="4111" height="2607" alt="Physical topolgy" src="https://github.com/user-attachments/assets/b62b8e5b-c05d-477d-b8e8-4919ac01378a" />
 
 *Figure 1: Physical Topology Diagram of Barolong Farms Network*
 
@@ -161,6 +161,7 @@ The assigned addressing block **10.19.0.0/16** has been subnetted into **/24** n
 
 ### Logical Topology Diagram
 
+<img width="5904" height="1567" alt="Logical topology" src="https://github.com/user-attachments/assets/4e80fc54-e92e-42b2-8706-70632f02781a" />
 
 
 ---
@@ -217,35 +218,3 @@ The assigned addressing block **10.19.0.0/16** has been subnetted into **/24** n
 ## 🚫 Guest Network Isolation (CR3)
 
 ### ACL Implementation
-
-To satisfy Change Request CR3, an Access Control List (ACL) is applied on the Core Router to block Guest VLAN 99 from accessing internal networks:
-
-```cisco
-! ================================================================
-! ACL 110 - Applied to VLAN 99 Gateway Interface (inbound)
-! Purpose: Isolate Guest Wi-Fi from all internal networks
-! ================================================================
-
-! Deny Guest VLAN to Management VLAN
-access-list 110 deny ip 10.19.99.0 0.0.0.255 10.19.10.0 0.0.0.255
-
-! Deny Guest VLAN to Admin Staff VLAN
-access-list 110 deny ip 10.19.99.0 0.0.0.255 10.19.20.0 0.0.0.255
-
-! Deny Guest VLAN to Operations Staff VLAN
-access-list 110 deny ip 10.19.99.0 0.0.0.255 10.19.30.0 0.0.0.255
-
-! Deny Guest VLAN to Internal Wireless VLAN
-access-list 110 deny ip 10.19.99.0 0.0.0.255 10.19.40.0 0.0.0.255
-
-! Permit all other traffic (Internet, DHCP, DNS)
-access-list 110 permit ip any any
-
-! ================================================================
-! Apply ACL to Guest sub-interface
-! ================================================================
-
-interface GigabitEthernet0/1.99
- encapsulation dot1Q 99
- ip address 10.19.99.1 255.255.255.0
- ip access-group 110 in
