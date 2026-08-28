@@ -161,24 +161,91 @@ The assigned addressing block **10.19.0.0/16** has been subnetted into **/24** n
 
 ### Logical Topology Diagram
 
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ CORE ROUTER (R1) │
-│ (Router-on-a-Stick) │
-│ │
-│ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐ │
-│ │ VLAN 10 │ │ VLAN 20 │ │ VLAN 30 │ │ VLAN 40 │ │ VLAN 99 │ │
-│ │Management│ │ Admin │ │Operations│ │Internal │ │ Guest │ │
-│ │10.19.10.0│ │10.19.20.0│ │10.19.30.0│ │Wireless │ │ 10.19.99.0 │ │
-│ │ /24 │ │ /24 │ │ /24 │ │10.19.40.0│ │ /24 │ │
-│ │Gateway │ │Gateway │ │Gateway │ │ /24 │ │ Gateway │ │
-│ │10.19.10.1│ │10.19.20.1│ │10.19.30.1│ │Gateway │ │ 10.19.99.1 │ │
-│ └──────────┘ └──────────┘ └──────────┘ │10.19.40.1│ └──────┬─────────┘ │
-│ └──────────┘ │ │
-└───────────────────────────────────────────────────────────────┼───────────┘
-│
-┌───────▼───────────┐
-│ ACL 110 Applied │
-│ (Inbound) │
-│ Block Guest │
-│ to Internal │
-└───────────────────┘
+
+
+---
+
+## 📡 IP Addressing Plan
+
+### VLAN and Subnet Allocation
+
+| **VLAN** | **VLAN Name** | **Network Address** | **Subnet Mask** | **CIDR** | **Usable Host Range** | **Broadcast Address** | **Gateway** |
+|----------|---------------|---------------------|-----------------|----------|----------------------|----------------------|-------------|
+| 10 | Management | 10.19.10.0 | 255.255.255.0 | /24 | 10.19.10.1 - 10.19.10.254 | 10.19.10.255 | 10.19.10.1 |
+| 20 | Admin Staff | 10.19.20.0 | 255.255.255.0 | /24 | 10.19.20.1 - 10.19.20.254 | 10.19.20.255 | 10.19.20.1 |
+| 30 | Operations Staff | 10.19.30.0 | 255.255.255.0 | /24 | 10.19.30.1 - 10.19.30.254 | 10.19.30.255 | 10.19.30.1 |
+| 40 | Internal Wireless | 10.19.40.0 | 255.255.255.0 | /24 | 10.19.40.1 - 10.19.40.254 | 10.19.40.255 | 10.19.40.1 |
+| 99 | Guest Wi-Fi | 10.19.99.0 | 255.255.255.0 | /24 | 10.19.99.1 - 10.19.99.254 | 10.19.99.255 | 10.19.99.1 |
+
+### Device IP Assignments
+
+| **Device** | **Interface** | **IP Address** | **Subnet Mask** | **VLAN** | **Description** |
+|------------|---------------|----------------|-----------------|----------|-----------------|
+| **Core Router (R1)** | | | | | |
+| | GigabitEthernet0/0 | 10.19.254.1 | 255.255.255.0 | - | WAN connection to ISP |
+| | GigabitEthernet0/1.10 | 10.19.10.1 | 255.255.255.0 | 10 | Gateway - Management |
+| | GigabitEthernet0/1.20 | 10.19.20.1 | 255.255.255.0 | 20 | Gateway - Admin Staff |
+| | GigabitEthernet0/1.30 | 10.19.30.1 | 255.255.255.0 | 30 | Gateway - Operations |
+| | GigabitEthernet0/1.40 | 10.19.40.1 | 255.255.255.0 | 40 | Gateway - Internal Wireless |
+| | GigabitEthernet0/1.99 | 10.19.99.1 | 255.255.255.0 | 99 | Gateway - Guest Wi-Fi |
+| **Core Switch (S1)** | | | | | |
+| | VLAN 10 SVI | 10.19.10.2 | 255.255.255.0 | 10 | Management interface |
+| **Wireless LAN Controller (WLC)** | | | | | |
+| | Management Interface | 10.19.10.10 | 255.255.255.0 | 10 | WLC management IP |
+| **Lightweight Access Points (LAPs)** | | | | | |
+| | Management | DHCP from VLAN 10 | - | 10 | Dynamic IP assignment from DHCP pool |
+| **Access Switch S3** | | | | | |
+| | VLAN 10 SVI | 10.19.10.11 | 255.255.255.0 | 10 | Management interface |
+| **Access Switch S4** | | | | | |
+| | VLAN 10 SVI | 10.19.10.12 | 255.255.255.0 | 10 | Management interface |
+
+### Addressing Plan Rationale
+
+| **Design Decision** | **Rationale** |
+|---------------------|---------------|
+| **/24 Subnets throughout** | Provides up to 254 hosts per VLAN, sufficient for current needs with room for growth. Simplifies management and troubleshooting. |
+| **VLAN 10 for Management** | Isolates network device management traffic from user traffic, improving security. |
+| **VLAN 40 for Internal Wireless** | Dedicated subnet for wireless staff devices to simplify DHCP management and security policy application. |
+| **VLAN 99 for Guest** | Separate subnet with no internal access permissions, directly addressing CR3 requirement. |
+| **DHCP for Wireless Clients** | Allows seamless connectivity for seasonal staff without manual IP configuration. |
+| **Static IPs for Infrastructure** | Network devices (routers, switches, WLC) have static IPs for reliable management access. |
+| **.1 Gateway Convention** | All gateways are .1 on their respective subnets for consistency and ease of troubleshooting. |
+| **Shorter Lease for Guest VLAN** | 1-day lease for guests ensures IP addresses are released promptly and pool doesn't exhaust. |
+
+---
+
+## 🚫 Guest Network Isolation (CR3)
+
+### ACL Implementation
+
+To satisfy Change Request CR3, an Access Control List (ACL) is applied on the Core Router to block Guest VLAN 99 from accessing internal networks:
+
+```cisco
+! ================================================================
+! ACL 110 - Applied to VLAN 99 Gateway Interface (inbound)
+! Purpose: Isolate Guest Wi-Fi from all internal networks
+! ================================================================
+
+! Deny Guest VLAN to Management VLAN
+access-list 110 deny ip 10.19.99.0 0.0.0.255 10.19.10.0 0.0.0.255
+
+! Deny Guest VLAN to Admin Staff VLAN
+access-list 110 deny ip 10.19.99.0 0.0.0.255 10.19.20.0 0.0.0.255
+
+! Deny Guest VLAN to Operations Staff VLAN
+access-list 110 deny ip 10.19.99.0 0.0.0.255 10.19.30.0 0.0.0.255
+
+! Deny Guest VLAN to Internal Wireless VLAN
+access-list 110 deny ip 10.19.99.0 0.0.0.255 10.19.40.0 0.0.0.255
+
+! Permit all other traffic (Internet, DHCP, DNS)
+access-list 110 permit ip any any
+
+! ================================================================
+! Apply ACL to Guest sub-interface
+! ================================================================
+
+interface GigabitEthernet0/1.99
+ encapsulation dot1Q 99
+ ip address 10.19.99.1 255.255.255.0
+ ip access-group 110 in
