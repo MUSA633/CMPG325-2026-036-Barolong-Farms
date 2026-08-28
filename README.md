@@ -168,3 +168,40 @@ witch | Cisco 2960 (Layer 2) | 1 | Aggregates access switches |
 
 ---
 
+## 🚫 Guest Network Isolation (CR3)
+
+### ACL Implementation
+
+To satisfy Change Request CR3, an Access Control List (ACL) is applied on the Core Router to block Guest VLAN 99 from accessing internal networks:
+
+```cisco
+! ================================================================
+! ACL 110 - Applied to VLAN 99 Gateway Interface (inbound)
+! Purpose: Isolate Guest Wi-Fi from all internal networks
+! ================================================================
+
+! Deny Guest VLAN to Management VLAN
+access-list 110 deny ip 10.19.99.0 0.0.0.255 10.19.10.0 0.0.0.255
+
+! Deny Guest VLAN to Admin Staff VLAN
+access-list 110 deny ip 10.19.99.0 0.0.0.255 10.19.20.0 0.0.0.255
+
+! Deny Guest VLAN to Operations Staff VLAN
+access-list 110 deny ip 10.19.99.0 0.0.0.255 10.19.30.0 0.0.0.255
+
+! Deny Guest VLAN to Internal Wireless VLAN
+access-list 110 deny ip 10.19.99.0 0.0.0.255 10.19.40.0 0.0.0.255
+
+! Permit all other traffic (Internet, DHCP, DNS)
+access-list 110 permit ip any any
+
+! ================================================================
+! Apply ACL to Guest sub-interface
+! ================================================================
+
+interface GigabitEthernet0/1.99
+ encapsulation dot1Q 99
+ ip address 10.19.99.1 255.255.255.0
+ ip access-group 110 in
+---
+
