@@ -203,3 +203,270 @@ interface GigabitEthernet0/1.99
  encapsulation dot1Q 99
  ip address 10.19.99.1 255.255.255.0
  ip access-group 110 in
+! ================================================================
+! DHCP Configuration on Core Router (R1)
+! ================================================================
+
+! Exclude static addresses from DHCP pools
+ip dhcp excluded-address 10.19.10.1 10.19.10.50
+ip dhcp excluded-address 10.19.20.1 10.19.20.50
+ip dhcp excluded-address 10.19.30.1 10.19.30.50
+ip dhcp excluded-address 10.19.40.1 10.19.40.50
+ip dhcp excluded-address 10.19.99.1 10.19.99.50
+
+! DHCP Pool for Management VLAN
+ip dhcp pool VLAN10-Pool
+ network 10.19.10.0 255.255.255.0
+ default-router 10.19.10.1
+ dns-server 8.8.8.8
+ lease 7
+
+! DHCP Pool for Admin Staff VLAN
+ip dhcp pool VLAN20-Pool
+ network 10.19.20.0 255.255.255.0
+ default-router 10.19.20.1
+ dns-server 8.8.8.8
+ lease 7
+
+! DHCP Pool for Operations Staff VLAN
+ip dhcp pool VLAN30-Pool
+ network 10.19.30.0 255.255.255.0
+ default-router 10.19.30.1
+ dns-server 8.8.8.8
+ lease 7
+
+! DHCP Pool for Internal Wireless VLAN
+ip dhcp pool VLAN40-Pool
+ network 10.19.40.0 255.255.255.0
+ default-router 10.19.40.1
+ dns-server 8.8.8.8
+ lease 7
+
+! DHCP Pool for Guest Wi-Fi VLAN
+ip dhcp pool VLAN99-Pool
+ network 10.19.99.0 255.255.255.0
+ default-router 10.19.99.1
+ dns-server 8.8.8.8
+ lease 1
+! ================================================================
+! Core Router (R1) - Base Configuration
+! ================================================================
+
+! Hostname
+hostname R1
+
+! Configure Sub-interfaces for Inter-VLAN Routing
+!
+! Management VLAN 10
+interface GigabitEthernet0/1.10
+ encapsulation dot1Q 10
+ ip address 10.19.10.1 255.255.255.0
+!
+! Admin Staff VLAN 20
+interface GigabitEthernet0/1.20
+ encapsulation dot1Q 20
+ ip address 10.19.20.1 255.255.255.0
+!
+! Operations Staff VLAN 30
+interface GigabitEthernet0/1.30
+ encapsulation dot1Q 30
+ ip address 10.19.30.1 255.255.255.0
+!
+! Internal Wireless VLAN 40
+interface GigabitEthernet0/1.40
+ encapsulation dot1Q 40
+ ip address 10.19.40.1 255.255.255.0
+!
+! Guest Wi-Fi VLAN 99 (with ACL applied)
+interface GigabitEthernet0/1.99
+ encapsulation dot1Q 99
+ ip address 10.19.99.1 255.255.255.0
+ ip access-group 110 in
+
+! NAT Configuration for Internet Access
+ip nat inside source list 1 interface GigabitEthernet0/0 overload
+!
+access-list 1 permit 10.19.0.0 0.0.255.255
+!
+interface GigabitEthernet0/0
+ ip nat outside
+!
+interface GigabitEthernet0/1.10
+ ip nat inside
+!
+interface GigabitEthernet0/1.20
+ ip nat inside
+!
+interface GigabitEthernet0/1.30
+ ip nat inside
+!
+interface GigabitEthernet0/1.40
+ ip nat inside
+!
+interface GigabitEthernet0/1.99
+ ip nat inside
+! ================================================================
+! Core Switch (S1) - Base Configuration
+! ================================================================
+
+! Hostname
+hostname S1
+
+! Create VLANs
+vlan 10
+ name Management
+!
+vlan 20
+ name Admin_Staff
+!
+vlan 30
+ name Operations_Staff
+!
+vlan 40
+ name Internal_Wireless
+!
+vlan 99
+ name Guest_WiFi
+
+! Configure Trunk to Router
+interface GigabitEthernet1/1
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,40,99
+
+! Configure Trunk to Distribution Switch
+interface GigabitEthernet1/2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,40,99
+
+! Configure SVI for Management
+interface VLAN 10
+ ip address 10.19.10.2 255.255.255.0
+ no shutdown
+
+! Default Gateway
+ip default-gateway 10.19.10.1
+! ================================================================
+! Distribution Switch (S2) - Base Configuration
+! ================================================================
+
+! Hostname
+hostname S2
+
+! Create VLANs
+vlan 10
+ name Management
+!
+vlan 20
+ name Admin_Staff
+!
+vlan 30
+ name Operations_Staff
+!
+vlan 40
+ name Internal_Wireless
+!
+vlan 99
+ name Guest_WiFi
+
+! Configure Trunk to Core Switch
+interface GigabitEthernet1/1
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,40,99
+
+! Configure Trunk to Access Switches
+interface GigabitEthernet1/2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,40,99
+!
+interface GigabitEthernet1/3
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,40,99
+
+! Configure SVI for Management
+interface VLAN 10
+ ip address 10.19.10.3 255.255.255.0
+ no shutdown
+
+! Default Gateway
+ip default-gateway 10.19.10.1
+! ================================================================
+! Access Switch (S3) - Base Configuration
+! ================================================================
+
+! Hostname
+hostname S3
+
+! Create VLANs
+vlan 10
+ name Management
+!
+vlan 20
+ name Admin_Staff
+!
+vlan 99
+ name Guest_WiFi
+
+! Configure Trunk to Distribution Switch
+interface GigabitEthernet1/1
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,99
+
+! Configure Access Ports for Admin PCs (VLAN 20)
+interface FastEthernet0/1
+ switchport mode access
+ switchport access vlan 20
+!
+interface FastEthernet0/2
+ switchport mode access
+ switchport access vlan 20
+
+! Configure SVI for Management
+interface VLAN 10
+ ip address 10.19.10.11 255.255.255.0
+ no shutdown
+
+! Default Gateway
+ip default-gateway 10.19.10.1
+CMPG325-2026-036-Barolong-Farms/
+│
+├── README.md                                    # Project overview and documentation
+│
+├── Packet-Tracer/
+│   └── Barolong_Farms_Network.pkt               # Cisco Packet Tracer file
+│
+├── Documentation/
+│   ├── Client_Requirements.md                   # Detailed client requirements
+│   ├── Network_Design.md                        # Physical and logical topology
+│   ├── IP_Addressing_Plan.md                    # IP addressing tables
+│   ├── VLAN_Design.md                           # VLAN configuration
+│   ├── Wireless_Security.md                     # WPA2-PSK implementation
+│   └── Configuration_Guide.md                   # Device configuration commands
+│
+├── Evidence/
+│   ├── Screenshots/
+│   │   ├── 01_Topology_Overview.png
+│   │   ├── 02_IP_Configuration.png
+│   │   ├── 03_Wireless_Settings.png
+│   │   ├── 04_ACL_Configuration.png
+│   │   ├── 05_DHCP_Configuration.png
+│   │   ├── 06_Connectivity_Testing.png
+│   │   └── 07_Guest_Isolation_Test.png
+│   │
+│   └── Logs/
+│       ├── Ping_Tests.txt
+│       ├── DHCP_Logs.txt
+│       └── Troubleshooting_Log.txt
+│
+├── Milestones/
+│   ├── Milestone1_Client_Design_Review.md
+│   ├── Milestone2_Implementation.md
+│   └── Milestone3_Final_Submission.md
+│
+└── Video/
+    └── Demonstration.mp4                       # 15-20 minute video
